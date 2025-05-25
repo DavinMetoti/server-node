@@ -29,7 +29,7 @@ io.on('connection', (socket) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('Socket.IO server is running 🚀');
+  res.send('osce mediko server is running 🚀');
 });
 
 const PORT = process.env.PORT || 3000;
