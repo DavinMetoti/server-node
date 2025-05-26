@@ -14,16 +14,43 @@ const io = socketIo(server, {
   }
 });
 
+// Ambil channel dan secure key dari .env
+const VALID_CHANNELS = [
+  process.env.CHANNEL_SET_MEDIKO,
+  process.env.CHANNEL_ONCE_UKMPPD
+];
+const SECURE_KEYS = {
+  [process.env.CHANNEL_SET_MEDIKO]: process.env.SECURE_KEY_SET_MEDIKO,
+  [process.env.CHANNEL_ONCE_UKMPPD]: process.env.SECURE_KEY_ONCE_UKMPPD
+};
+
+// Middleware autentikasi Socket.IO
+io.use((socket, next) => {
+  const { channel, secureKey } = socket.handshake.query;
+
+  if (!channel || !secureKey) {
+    return next(new Error('Unauthorized: Missing channel or secureKey'));
+  }
+
+  if (!VALID_CHANNELS.includes(channel) || SECURE_KEYS[channel] !== secureKey) {
+    return next(new Error('Unauthorized: Invalid channel or secureKey'));
+  }
+
+  socket.channel = channel;
+  next();
+});
+
+// Event Socket.IO
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+  console.log(`✅ User connected on "${socket.channel}" with ID: ${socket.id}`);
 
   socket.on('send-message', (data) => {
-    console.log('Received message:', data);
-    io.emit('receive-message', data);
+    console.log(`[${socket.channel}] Received message:`, data);
+    io.emit('receive-message', data); // Kirim ke semua (bisa disesuaikan ke room jika perlu)
   });
 
   socket.on('check-trigger', (data, callback) => {
-    console.log('Received check-trigger from:', socket.id, 'with data:', data);
+    console.log(`[${socket.channel}] Trigger check from ${socket.id}:`, data);
     const isTriggered = true;
     if (typeof callback === 'function') {
       callback(isTriggered);
@@ -31,16 +58,17 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
+    console.log(`❌ Disconnected: ${socket.id} from "${socket.channel}"`);
   });
 });
 
+// Endpoint dasar
 app.get('/', (req, res) => {
-  res.send('this osce mediko server is running 🚀');
+  res.send('this osce mediko secure socket server is running 🚀');
 });
 
+// Jalankan server
 const PORT = process.env.PORT || 3000;
-
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Socket.IO server running on http://0.0.0.0:${PORT}`);
+  console.log(`🔐 Secure Socket.IO server running at http://0.0.0.0:${PORT}`);
 });
