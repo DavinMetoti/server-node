@@ -14,7 +14,7 @@ const io = socketIo(server, {
   }
 });
 
-// Ambil channel dan secure key dari .env
+// get channel and screte key from .env
 const VALID_CHANNELS = [
   process.env.CHANNEL_SET_MEDIKO,
   process.env.CHANNEL_ONCE_UKMPPD
@@ -24,7 +24,7 @@ const SECURE_KEYS = {
   [process.env.CHANNEL_ONCE_UKMPPD]: process.env.SECURE_KEY_ONCE_UKMPPD
 };
 
-// Middleware autentikasi Socket.IO
+// Middleware auth Socket.IO
 io.use((socket, next) => {
   const { channel, secureKey } = socket.handshake.query;
 
@@ -44,13 +44,13 @@ io.use((socket, next) => {
 io.on('connection', (socket) => {
   console.log(`✅ User connected on "${socket.channel}" with ID: ${socket.id}`);
 
-  // Gabung ke room sesuai channel
+  // private room
   socket.join(socket.channel);
 
   socket.on('send-message', (data) => {
     console.log(`[${socket.channel}] Received message:`, data);
 
-    // Hanya kirim ke klien dalam channel yang sama
+    // Just send the message to the private room
     io.to(socket.channel).emit('receive-message', data);
   });
 
@@ -67,12 +67,10 @@ io.on('connection', (socket) => {
   });
 });
 
-// Endpoint dasar
 app.get('/', (req, res) => {
   res.send('this osce mediko secure socket server is running 🚀');
 });
 
-// Jalankan server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🔐 Secure Socket.IO server running at http://0.0.0.0:${PORT}`);
