@@ -44,9 +44,14 @@ io.use((socket, next) => {
 io.on('connection', (socket) => {
   console.log(`✅ User connected on "${socket.channel}" with ID: ${socket.id}`);
 
+  // Gabung ke room sesuai channel
+  socket.join(socket.channel);
+
   socket.on('send-message', (data) => {
     console.log(`[${socket.channel}] Received message:`, data);
-    io.emit('receive-message', data); // Kirim ke semua (bisa disesuaikan ke room jika perlu)
+
+    // Hanya kirim ke klien dalam channel yang sama
+    io.to(socket.channel).emit('receive-message', data);
   });
 
   socket.on('check-trigger', (data, callback) => {
