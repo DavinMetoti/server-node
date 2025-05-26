@@ -9,7 +9,7 @@ app.use(cors());
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: '*', // atau domain Angular kamu
+    origin: '*',
     methods: ['GET', 'POST']
   }
 });
@@ -19,8 +19,15 @@ io.on('connection', (socket) => {
 
   socket.on('send-message', (data) => {
     console.log('Received message:', data);
-    // broadcast ke semua client
     io.emit('receive-message', data);
+  });
+
+  socket.on('check-trigger', (data, callback) => {
+    console.log('Received check-trigger from:', socket.id, 'with data:', data);
+    const isTriggered = true;
+    if (typeof callback === 'function') {
+      callback(isTriggered);
+    }
   });
 
   socket.on('disconnect', () => {
